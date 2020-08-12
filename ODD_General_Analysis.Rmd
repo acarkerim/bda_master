@@ -1,0 +1,99 @@
+---
+title: "ODD General Analysis"
+author: "Kerim Acar"
+date: "25/10/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(zoo)
+library(ggplot2)
+library(scales)
+library(GGally)
+library(tidyr)
+```
+
+# Introduction & Manipulation of Dataset
+
+First, I introduced the dataset then I did some manipulation to rows that contain wrong information. I also created a joint 'Date' variable from year and month.
+
+```{r, cache=TRUE,warning=FALSE,message=FALSE}
+rds_data <- readRDS("C:/Users/kerim.acar/Desktop/BDA/BDA503/car_data_aggregate.rds")
+rds_data <- rds_data %>% 
+  filter(!(startsWith(brand_name, "ODD") | startsWith(brand_name, "TOPLAM")))
+
+rds_data$Date <- as.Date(as.yearmon(paste(rds_data$year, rds_data$month), "%Y %m"), frac = 1)
+rds_data <- rds_data %>% 
+              arrange(Date)
+```
+
+# Total Sales by Brands
+
+I wanted to see the best and the worst sellers in the time period between January 2016 and September 2018.
+
+```{r, cache=TRUE,warning=FALSE,message=FALSE}
+rds_total_total <- rds_data %>% 
+  group_by(brand_name) %>% 
+  summarise(total_total = sum(total_total)) %>%
+  arrange(desc(total_total))
+```
+
+# Top, Average and Bottom Sellers Selection
+
+I wanted to analyze the sale performances of brands, so I included 3 top sellers(RENAULT, FIAT, FORD), 2 average sellers (AUDI, BMW) and 1 bottom seller (VOLVO).
+
+```{r, cache=TRUE,warning=FALSE,message=FALSE}
+selected_data<- subset(rds_data,brand_name == 'RENAULT' |
+                    brand_name =='FIAT' | brand_name =='FORD' | 
+                     brand_name =='AUDI' | brand_name == 'VOLVO' |
+                     brand_name == 'BMW')
+selected_data <- selected_data[,c(1,10,13)]
+head(selected_data)
+
+```
+
+# Sales Trends Among Selected Brands
+
+I made a scatter plot of sales by time among selected brands. 
+
+```{r, fig.width=12,fig.height=6}
+ggplot(data=selected_data, aes(x=Date,y=total_total,color=brand_name))+
+  scale_x_date(labels = date_format("%m/%Y"),breaks = date_breaks(width = "2 months"))+ 
+  geom_point() +
+  scale_y_continuous(breaks = seq(0,21000, 1000)) +
+  theme_classic() + geom_line()+ theme(axis.text.x = element_text(angle=20)) +
+  ylab("Total Sales") + ggtitle("Total Sales by Time of Selected Brands")
+```
+
+As we can see from the graph, top sellers' sales follow the same trend which increases sharply at the end of the year and decreases at the same scale after the beginning of the next year.
+
+
+# Correlation Between Brands
+
+I changed the format of dataset which takes selected brands as columns, dates as rows and filled with total sales.
+
+```{r, cache=TRUE,warning=FALSE,message=FALSE}
+selected_data<- selected_data[,c("Date","brand_name","total_total")]
+new<-selected_data %>%
+  spread(brand_name,total_total)
+head(new)
+```
+
+
+ Then, I created a correlation matrix for selected brands. As shown in previous graph, top sellers(FIAT, FORD, RENAULT) are highly correlated with each other.
+ 
+ 
+```{r, cache=TRUE,warning=FALSE,message=FALSE}
+ggpairs(new[,-1])+ theme_classic()
+```
+
+
+
+
+
+
+
+
+

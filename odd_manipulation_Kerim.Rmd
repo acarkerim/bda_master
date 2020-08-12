@@ -1,0 +1,57 @@
+---
+title: "ODD Data Manipulation & Analysis"
+author: "Kerim Acar"
+date: "23/11/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(ggplot2)
+```
+
+# From Raw to Civilized Data
+
+Car sales data downloaded from "Otomotiv Distributorleri Dernegi" website. My part was to obtain January 2016 sales and name of the excel file changed to "odd_retail_sales_2016_01.xlsx".
+
+## Download Raw Data
+
+My raw excel file is in my [repository](pj18-mkerimacar/odd_retail_sales_2016_01.xlsx).
+I downloaded that file and put it in a temporary file. Then I read that excel document into R and removed the temp file.
+Last two rows also deleted from the dataset since it consists of total sales info which is unnecessary. Then I showed first 10 rows of the dataset.
+
+
+```{r, cache=TRUE,warning=FALSE,message=FALSE}
+tmp<-tempfile(fileext=".xlsx")
+download.file("https://github.com/MEF-BDA503/pj18-mkerimacar/blob/master/odd_retail_sales_2016_01.xlsx?raw=true",destfile=tmp)
+raw_data<-readxl::read_excel(tmp,skip=7,col_names=FALSE)
+file.remove(tmp)
+raw_data <- raw_data %>% slice(-c(49,50))
+head(raw_data,10)
+```
+
+## Make Data Civilized
+
+In order to make the data standardized and workable I renamed column names and removed NA values from the dataset.
+
+```{r, warning=FALSE,message=FALSE}
+colnames(raw_data) <- c("brand_name","auto_dom","auto_imp","auto_total","comm_dom","comm_imp","comm_total","total_dom","total_imp","total_total")
+car_data_jan_16 <- raw_data %>% mutate_if(is.numeric,funs(ifelse(is.na(.),0,.))) %>% mutate(year=2016,month=1)
+print(car_data_jan_16,width=Inf)
+```
+
+
+# Relative Frequencies
+
+I wanted to see relative frequencies of total sales and I created a column named as total_relfreqs next to total sales (rounded to 3 decimals).
+
+```{r}
+car_data_jan_16 %>% 
+  filter(auto_total > 0 & comm_total > 0) %>%
+  select(brand_name,total_total) %>%
+  arrange(desc(total_total)) %>%
+  mutate(total_relfreqs = (total_total/sum(total_total))) %>%
+  mutate(total_relfreqs = sprintf("%0.3f", total_relfreqs))
+```
+

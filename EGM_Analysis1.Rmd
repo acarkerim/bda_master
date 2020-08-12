@@ -1,0 +1,50 @@
+---
+title: "EGM Analysis"
+author: "Kerim Acar"
+date: "31/10/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+options(scipen = 11)
+options(digits = 11)
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+```
+
+## Download the Data
+
+I downloaded the raw data from my GitHub repository.
+
+```{r, cache=TRUE,warning=FALSE,message=FALSE}
+tmp<-tempfile(fileext=".xlsx")
+download.file(
+  "https://github.com/MEF-BDA503/pj18-mkerimacar/blob/master/egm_example_data.xlsx?raw=true",
+  destfile=tmp,mode="wb")
+raw_data<-readxl::read_excel(tmp,col_names=TRUE)
+file.remove(tmp)
+head(raw_data)
+tail(raw_data)
+```
+
+# Firms by Median Participants 
+
+I think getting medians of participants is a good parameter to measure how firms are performing.
+
+```{r, cache=TRUE,warning=FALSE,message=FALSE}
+raw_data <- raw_data %>% 
+  group_by(pension_fund_company) %>% 
+  mutate(medians = median(n_of_participants))
+
+```
+
+Barplot of firms presented below by their median numbers of participants.
+
+```{r, fig.width=12,fig.height=8}
+ggplot(data=raw_data, aes(x=pension_fund_company, y=medians, fill=pension_fund_company)) +
+  geom_bar(stat="identity")+ 
+  theme_classic() + xlab("Firms") + 
+  theme(axis.text.x = element_text(angle = 90)) + ylab("Median Number of Participants")
+```
